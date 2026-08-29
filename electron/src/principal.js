@@ -114,7 +114,7 @@ function creerFenetre () {
   fenetre = new BrowserWindow({
     width: 1360,
     height: 900,
-    minWidth: 960,
+    minWidth: 1024,
     minHeight: 620,
     backgroundColor: FOND,
     show: false,

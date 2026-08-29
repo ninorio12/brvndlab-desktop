@@ -32,10 +32,15 @@ mac:
   icon: ressources/icone.png
   # UN SEUL FICHIER POUR LES DEUX MACS. « universal » contient Apple Silicon et
   # Intel : personne n'a à savoir quelle puce il a dans sa machine.
+  # Noms de fichiers STABLES (sans numero de version) : les liens de
+  # telechargement du SaaS ne bougent donc jamais d'une version a l'autre.
+  artifactName: Brvndlab-${arch}.${ext}
   target:
     - target: dmg
       arch:
         - universal
+        - arm64
+        - x64
   # Le runtime durci est EXIGÉ par la notarisation. On le laisse allumé dès
   # maintenant pour que le jour où le compte Apple arrive, il n'y ait rien à
   # changer : seuls les identifiants manquent.
@@ -62,10 +67,12 @@ dmg:
 
 win:
   icon: ressources/icone.png
+  artifactName: Brvndlab-Setup-${arch}.${ext}
   target:
     - target: nsis
       arch:
         - x64
+        - arm64
 
 nsis:
   # Pas d'installation en un clic : on montre où ça s'installe et on laisse
