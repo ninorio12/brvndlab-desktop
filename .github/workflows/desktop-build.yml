@@ -1,0 +1,61 @@
+name: Application de bureau
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            label: macOS Universal
+            args: "--target universal-apple-darwin"
+            rust_targets: "aarch64-apple-darwin,x86_64-apple-darwin"
+            experimental: false
+          - platform: windows-latest
+            label: Windows x64
+            args: ""
+            rust_targets: ""
+            experimental: false
+          - platform: windows-latest
+            label: Windows ARM64
+            args: "--target aarch64-pc-windows-msvc"
+            rust_targets: "aarch64-pc-windows-msvc"
+            experimental: true
+
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.platform }}
+    continue-on-error: ${{ matrix.experimental }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_targets }}
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ./desktop/src-tauri -> target
+
+      - name: Build ${{ matrix.label }}
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: ./desktop
+          tagName: bureau-v__VERSION__
+          releaseName: "Brvndlab bureau v__VERSION__"
+          releaseBody: "Application de bureau Brvndlab. Non signee pour l'instant : macOS demande un clic droit puis Ouvrir, Windows affiche un avertissement SmartScreen."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
