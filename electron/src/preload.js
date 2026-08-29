@@ -66,13 +66,20 @@ function relayerTheme () {
     if (!m || m.length < 3) return null
     return '#' + m.slice(0, 3).map((n) => Number(n).toString(16).padStart(2, '0')).join('')
   }
-  const fond = () => {
+  /* ON MESURE, ON NE DEVINE PLUS.
+     La hauteur etait ecrite en dur (62px, celle de l'en-tete). Des que la page
+     n'est pas a 100 % de zoom, ou que l'en-tete change de taille, la bande des
+     boutons ne tombe plus sur la meme ligne que l'en-tete : on voit une marche
+     dans le coin. On renvoie donc la hauteur REELLE, mesuree dans la page. */
+  const mesure = () => {
     try {
       const entete = document.querySelector('.bvh-head')
       const cible = entete || document.body
-      if (!cible) return null
-      return enHex(getComputedStyle(cible).backgroundColor)
-    } catch { return null }
+      if (!cible) return { fond: null, hauteur: null }
+      const fond = enHex(getComputedStyle(cible).backgroundColor)
+      const h = entete ? Math.round(entete.getBoundingClientRect().height) : null
+      return { fond, hauteur: h && h > 24 && h < 120 ? h : null }
+    } catch { return { fond: null, hauteur: null } }
   }
 
   /* ON RENVOIE DES QUE LA COULEUR CHANGE, ET C'ETAIT LA PANNE.
@@ -84,14 +91,26 @@ function relayerTheme () {
      lorsque la couleur a reellement change. */
   let dernier = null
   const envoyer = () => {
-    const etat = { theme: lire(), fond: fond() }
-    const signature = etat.theme + '|' + etat.fond
+    const m = mesure()
+    const etat = { theme: lire(), fond: m.fond, hauteur: m.hauteur }
+    const signature = etat.theme + '|' + etat.fond + '|' + etat.hauteur
     if (signature === dernier) return
     dernier = signature
     ipcRenderer.send('brvndlab:theme', etat)
   }
+
+  /* LE FONDU DU CHANGEMENT DE THEME DURE UNE DEMI-SECONDE.
+     Lire la couleur a l'instant ou l'attribut change donne une teinte de
+     milieu de fondu, et comme on ne parle que lorsque la couleur change, on
+     restait fige sur cette teinte batarde. On rechantillonne donc pendant tout
+     le fondu, jusqu'a ce que la couleur se stabilise. */
+  const suivreLeFondu = () => {
+    envoyer()
+    for (const attente of [80, 200, 380, 560, 760, 1000]) setTimeout(envoyer, attente)
+  }
+
   envoyer()
-  new MutationObserver(envoyer).observe(racine, {
+  new MutationObserver(suivreLeFondu).observe(racine, {
     attributes: true,
     attributeFilter: ['data-bvh-theme', 'data-brv-theme', 'class'],
   })

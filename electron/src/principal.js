@@ -237,9 +237,10 @@ function habillageBarreWindows (info) {
        correctes si la page ne répond pas. */
     color: fond || (sombre ? '#141312' : '#FFFFFF'),
     symbolColor: sombre ? '#9A9A94' : '#55524C',
-    /* Même hauteur que l'en-tête Brvndlab : sinon la surcouche s'arrête au
-       milieu et dessine une marche dans le coin. */
-    height: 62,
+    /* La hauteur MESUREE dans la page, pas une valeur ecrite ici : l'en-tete
+       ne fait 62 pixels qu'a 100 % de zoom, et la moindre difference dessine
+       une marche dans le coin (vu le 29/08). 62 reste le repli. */
+    height: (typeof info === 'object' && info && Number.isFinite(info.hauteur) && info.hauteur) || 62,
   }
 }
 
