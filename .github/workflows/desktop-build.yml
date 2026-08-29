@@ -18,6 +18,16 @@ jobs:
             args: "--target universal-apple-darwin"
             rust_targets: "aarch64-apple-darwin,x86_64-apple-darwin"
             experimental: false
+          - platform: macos-latest
+            label: macOS Apple Silicon
+            args: "--target aarch64-apple-darwin"
+            rust_targets: "aarch64-apple-darwin"
+            experimental: false
+          - platform: macos-latest
+            label: macOS Intel x64
+            args: "--target x86_64-apple-darwin"
+            rust_targets: "x86_64-apple-darwin"
+            experimental: false
           - platform: windows-latest
             label: Windows x64
             args: ""
@@ -27,7 +37,7 @@ jobs:
             label: Windows ARM64
             args: "--target aarch64-pc-windows-msvc"
             rust_targets: "aarch64-pc-windows-msvc"
-            experimental: true
+            experimental: false
 
     name: ${{ matrix.label }}
     runs-on: ${{ matrix.platform }}
