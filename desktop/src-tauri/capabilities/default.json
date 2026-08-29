@@ -1,6 +1,0 @@
-{
-  "identifier": "default",
-  "description": "Capacites par defaut de la fenetre Brvndlab",
-  "windows": ["main"],
-  "permissions": ["core:default"]
-}

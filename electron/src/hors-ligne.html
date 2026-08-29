@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Brvndlab</title>
+<!--
+  L'ÉCRAN HORS LIGNE, LE NÔTRE.
+  Sans lui, une coupure de réseau affiche le dinosaure de Chrome et son adresse
+  en toutes lettres dans une fenêtre censée être une application. Ici : le fond
+  de la charte, une phrase, un bouton. Rien d'autre, parce qu'il n'y a rien à
+  faire d'autre.
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #0C0C0B;
+    color: #EDEDEA;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 32px;
+    /* Toute la surface tire la fenêtre : sans barre de titre, il faut bien un
+       endroit pour attraper l'écran et le déplacer. */
+    -webkit-app-region: drag;
+    user-select: none;
+  }
+  .boite { max-width: 380px; }
+  .rond {
+    width: 46px; height: 46px; margin: 0 auto 24px;
+    border-radius: 50%; border: 1px solid rgba(255,255,255,.14);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rond span { width: 7px; height: 7px; border-radius: 50%; background: #F97316; opacity: .85; }
+  h1 { font-size: 19px; font-weight: 600; letter-spacing: -.02em; margin: 0 0 10px; }
+  p { font-size: 13.5px; line-height: 1.6; color: rgba(237,237,234,.62); margin: 0 0 28px; }
+  button {
+    -webkit-app-region: no-drag;
+    font: inherit; font-size: 13.5px; font-weight: 600;
+    color: #0C0C0B; background: #EDEDEA;
+    border: 0; border-radius: 11px; padding: 11px 22px; cursor: pointer;
+    transition: opacity .15s ease;
+  }
+  button:hover { opacity: .88; }
+  .etat { margin-top: 18px; font-size: 12px; color: rgba(237,237,234,.38); min-height: 16px; }
+</style>
+</head>
+<body>
+  <div class="boite">
+    <div class="rond"><span></span></div>
+    <h1>Pas de connexion</h1>
+    <p>Brvndlab a besoin d'internet pour afficher ton espace. Dès que la connexion revient, on reprend là où tu en étais.</p>
+    <button id="reessayer" type="button">Réessayer</button>
+    <div class="etat" id="etat"></div>
+  </div>
+<script>
+  var bouton = document.getElementById('reessayer')
+  var etat = document.getElementById('etat')
+
+  function reessayer () {
+    etat.textContent = 'Nouvelle tentative...'
+    if (window.brvndlab && window.brvndlab.reessayer) window.brvndlab.reessayer()
+  }
+  bouton.addEventListener('click', reessayer)
+
+  // Le retour du réseau relance tout seul : personne ne devrait avoir à
+  // surveiller un bouton en attendant que le wifi revienne.
+  window.addEventListener('online', reessayer)
+
+  // Filet pour les cas où l'évènement « online » ment (réseau présent mais
+  // passerelle morte) : on retente doucement, toutes les quinze secondes.
+  setInterval(function () { if (navigator.onLine) reessayer() }, 15000)
+</script>
+</body>
+</html>

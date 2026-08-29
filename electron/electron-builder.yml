@@ -1,0 +1,101 @@
+# CONSTRUCTION DE L'APPLICATION DE BUREAU
+#
+# Un seul fichier pour macOS et Windows. La signature n'est PAS branchée ici :
+# les identifiants Apple et Microsoft ne sont pas encore ouverts (voir README).
+# Tel quel, `npm run construire` produit des binaires NON SIGNÉS, testables, et
+# rien d'autre ne changera le jour où les certificats arrivent que d'ajouter
+# quelques variables d'environnement.
+
+appId: com.brvndlab.bureau
+productName: Brvndlab
+copyright: Brvndlab
+
+directories:
+  output: dist
+  buildResources: ressources
+
+# On n'embarque que ce qui tourne : le code du processus principal et le
+# manifeste. Le SaaS lui-même vient du réseau, il n'y a rien d'autre à copier.
+files:
+  - src/**/*
+  - package.json
+
+# Le schéma de retour de connexion. C'est cette déclaration qui apprend au
+# système que « brvndlab://... » nous appartient.
+protocols:
+  - name: Brvndlab
+    schemes:
+      - brvndlab
+
+mac:
+  category: public.app-category.productivity
+  icon: ressources/icone.png
+  # UN SEUL FICHIER POUR LES DEUX MACS. « universal » contient Apple Silicon et
+  # Intel : personne n'a à savoir quelle puce il a dans sa machine.
+  target:
+    - target: dmg
+      arch:
+        - universal
+  # Le runtime durci est EXIGÉ par la notarisation. On le laisse allumé dès
+  # maintenant pour que le jour où le compte Apple arrive, il n'y ait rien à
+  # changer : seuls les identifiants manquent.
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: ressources/droits.mac.plist
+  entitlementsInherit: ressources/droits.mac.plist
+  # `notarize: false` tant qu'aucun compte Apple n'existe. Passer à true (et
+  # poser APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID) suffira.
+  notarize: false
+
+dmg:
+  title: Brvndlab
+  # Fenêtre d'installation classique : l'application à gauche, le dossier
+  # Applications à droite, on glisse de l'un à l'autre.
+  contents:
+    - x: 140
+      y: 200
+      type: file
+    - x: 400
+      y: 200
+      type: link
+      path: /Applications
+
+win:
+  icon: ressources/icone.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  # Pas d'installation en un clic : on montre où ça s'installe et on laisse
+  # choisir. Une application qui s'installe sans rien dire inquiète.
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Brvndlab
+  # Désinstallation propre : on efface aussi la session enregistrée.
+  deleteAppDataOnUninstall: false
+
+linux:
+  # Pas une cible officielle, mais ça rend le dossier testable sur nos machines
+  # de développement sans passer par un Mac.
+  icon: ressources/icone.png
+  category: Office
+  target:
+    - target: AppImage
+      arch:
+        - x64
+
+# OÙ L'APPLICATION VA CHERCHER SES MISES À JOUR.
+# GitHub Releases : c'est déjà là que vit le code, il n'y a pas d'hébergement
+# supplémentaire à monter, et electron-updater sait lire ce format nativement.
+# Tant qu'aucune version n'est publiée, la recherche échoue en silence (voir
+# src/maj.js) : l'application marche, elle ne se met simplement pas à jour.
+publish:
+  provider: github
+  owner: jonathanzekhe
+  repo: brvndlab
+  releaseType: release

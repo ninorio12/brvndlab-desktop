@@ -1,0 +1,27 @@
+{
+  "name": "brvndlab-bureau",
+  "productName": "Brvndlab",
+  "version": "1.0.0",
+  "description": "Brvndlab pour macOS et Windows",
+  "private": true,
+  "main": "src/principal.js",
+  "author": {
+    "name": "Brvndlab",
+    "email": "hey@brvndlab.com"
+  },
+  "scripts": {
+    "start": "electron .",
+    "verifier": "node --check src/principal.js && node --check src/preload.js && node --check src/menu.js && node --check src/liens.js && node --check src/maj.js",
+    "construire": "electron-builder --publish never",
+    "construire:mac": "electron-builder --mac --publish never",
+    "construire:windows": "electron-builder --win --publish never",
+    "publier": "electron-builder --publish always"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  }
+}

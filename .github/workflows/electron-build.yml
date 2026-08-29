@@ -1,0 +1,66 @@
+name: Application de bureau
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "electron/**"
+      - ".github/workflows/electron-build.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            label: macOS Universal
+            cible: "--mac"
+          - os: windows-latest
+            label: Windows x64
+            cible: "--win"
+
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: electron/package-lock.json
+
+      - name: Dependances
+        run: npm ci
+        working-directory: electron
+
+      - name: Verification syntaxe
+        run: npm run verifier
+        working-directory: electron
+
+      - name: Construire ${{ matrix.label }}
+        run: npx electron-builder ${{ matrix.cible }} --publish never
+        working-directory: electron
+        env:
+          # Aucun certificat n'existe encore : sans cette ligne, electron-builder
+          # part chercher une identite de signature dans le trousseau et echoue.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Publier
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: bureau-1.0.0
+          name: Brvndlab bureau 1.0.0
+          body: "Application de bureau Brvndlab. Non signee : au premier lancement, clic droit puis Ouvrir sur Mac, Informations complementaires puis Executer quand meme sur Windows."
+          draft: true
+          files: |
+            electron/dist/*.dmg
+            electron/dist/*.exe
+            electron/dist/*.AppImage
