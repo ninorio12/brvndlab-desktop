@@ -39,6 +39,19 @@ jobs:
           cache: npm
           cache-dependency-path: electron/package-lock.json
 
+      # NUMERO DE VERSION CROISSANT, SINON PAS DE MISE A JOUR.
+      # electron-updater ne propose une version que si elle est superieure a
+      # celle installee. En restant a 1.0.0 a chaque construction, aucune mise
+      # a jour n'aurait jamais ete proposee.
+      - name: Numero de version
+        shell: bash
+        run: |
+          V="1.0.${{ github.run_number }}"
+          node -e "const f='package.json';const p=require('./'+f);p.version='$V';require('fs').writeFileSync(f,JSON.stringify(p,null,2)+'\n')"
+          echo "VERSION=$V" >> $GITHUB_ENV
+          echo "version : $V"
+        working-directory: electron
+
       - name: Dependances
         run: npm ci
         working-directory: electron
@@ -58,11 +71,16 @@ jobs:
       - name: Publier
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: bureau-1.0.0
-          name: Brvndlab bureau 1.0.0
+          tag_name: v${{ env.VERSION }}
+          name: Brvndlab bureau ${{ env.VERSION }}
           body: "Application de bureau Brvndlab. Non signee : au premier lancement, clic droit puis Ouvrir sur Mac, Informations complementaires puis Executer quand meme sur Windows."
-          draft: true
+          # PUBLIEE, PAS EN BROUILLON : une release en brouillon est invisible
+          # pour la recherche de mise a jour comme pour le lien de telechargement.
+          draft: false
+          make_latest: true
+          # Les fichiers .yml sont le catalogue que lit la recherche de mise a
+          # jour. Sans eux, l'application ne sait pas qu'une version existe.
           files: |
             electron/dist/*.dmg
             electron/dist/*.exe
-            electron/dist/*.AppImage
+            electron/dist/latest*.yml

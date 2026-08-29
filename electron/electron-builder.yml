@@ -99,6 +99,10 @@ linux:
 # src/maj.js) : l'application marche, elle ne se met simplement pas à jour.
 publish:
   provider: github
-  owner: jonathanzekhe
-  repo: brvndlab
+  # LA OU LES VERSIONS SONT REELLEMENT PUBLIEES. Le depot de Jonathan a GitHub
+  # Actions eteint : aucune version n'y est jamais parue, donc la recherche de
+  # mise a jour ne trouvait rien et echouait en silence. A rebasculer le jour ou
+  # les Actions y seront rallumees.
+  owner: ninorio12
+  repo: brvndlab-desktop
   releaseType: release
