@@ -223,6 +223,13 @@ function creerFenetre () {
    rectangle noir dans le coin d'une application en thème clair. Le thème étant
    choisi par compte (et pas par le système), c'est la page qui nous le dit :
    le préchargement surveille l'attribut data-bvh-theme et le renvoie ici. */
+/** Hauteur de la bande des boutons : celle de l'en-tete, moins deux pixels. */
+function hauteurBande (info) {
+  const mesuree = typeof info === 'object' && info && Number.isFinite(info.hauteur) ? info.hauteur : null
+  if (!mesuree) return 60
+  return Math.max(28, Math.min(120, Math.floor(mesuree) - 2))
+}
+
 function habillageBarreWindows (info) {
   // Ancienne forme (une simple chaîne) tolérée : une fenêtre déjà ouverte peut
   // encore tourner avec l'ancien préchargement pendant une mise à jour.
@@ -239,8 +246,12 @@ function habillageBarreWindows (info) {
     symbolColor: sombre ? '#9A9A94' : '#55524C',
     /* La hauteur MESUREE dans la page, pas une valeur ecrite ici : l'en-tete
        ne fait 62 pixels qu'a 100 % de zoom, et la moindre difference dessine
-       une marche dans le coin (vu le 29/08). 62 reste le repli. */
-    height: (typeof info === 'object' && info && Number.isFinite(info.hauteur) && info.hauteur) || 62,
+       une marche dans le coin (vu le 29/08).
+       DEUX PIXELS DE MOINS, volontairement : mieux vaut que la bande s'arrete
+       juste avant le bas de l'en-tete que de mordre d'un cheveu sur la zone de
+       travail. Comme elle a exactement la couleur de l'en-tete, ces deux
+       pixels ne se voient pas ; un debordement, lui, se verrait. */
+    height: hauteurBande(info),
   }
 }
 
