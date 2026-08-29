@@ -40,14 +40,27 @@ if (!poserMarqueurs()) {
 /* LE THÈME REMONTE VERS LA FENÊTRE.
    Sous Windows, les boutons système sont dessinés par Windows par-dessus la
    page : sans cette remontée, un compte en thème clair se retrouve avec un
-   rectangle noir dans le coin. Le thème vit dans data-bvh-theme sur <html>,
-   posé par le SaaS lui-même : on l'observe et on le relaie, rien de plus. */
+   rectangle noir dans le coin.
+
+   ATTENTION, IL Y A DEUX THÈMES. L'application suit data-bvh-theme, mais les
+   écrans de connexion ont le leur, data-brv-theme, réglé par le petit soleil
+   de la page. En n'écoutant que le premier, la fenêtre gardait ses boutons
+   sombres devant un écran de connexion clair (vu le 29/08). On lit donc
+   l'attribut qui gouverne VRAIMENT la page affichée. */
 function relayerTheme () {
   const racine = document.documentElement
   if (!racine) return
-  const envoyer = () => ipcRenderer.send('brvndlab:theme', racine.getAttribute('data-bvh-theme') || 'dark')
+  const lire = () => {
+    const auth = racine.classList.contains('auth-page')
+    const valeur = racine.getAttribute(auth ? 'data-brv-theme' : 'data-bvh-theme')
+    return valeur === 'light' ? 'light' : 'dark'
+  }
+  const envoyer = () => ipcRenderer.send('brvndlab:theme', lire())
   envoyer()
-  new MutationObserver(envoyer).observe(racine, { attributes: true, attributeFilter: ['data-bvh-theme'] })
+  new MutationObserver(envoyer).observe(racine, {
+    attributes: true,
+    attributeFilter: ['data-bvh-theme', 'data-brv-theme', 'class'],
+  })
 }
 if (document.documentElement) relayerTheme()
 else document.addEventListener('DOMContentLoaded', relayerTheme, { once: true })

@@ -226,7 +226,9 @@ function creerFenetre () {
 function habillageBarreWindows (theme) {
   const sombre = theme !== 'light'
   return {
-    color: sombre ? '#0C0C0B' : '#EEF0F4',
+    // Les deux fonds du mood board : charbon en sombre, beige en clair. Le
+    // gris bleuté d'origine jurait avec le beige de la page.
+    color: sombre ? '#0C0C0B' : '#F3EEE4',
     symbolColor: sombre ? '#9A9A94' : '#55524C',
     height: 48,
   }
