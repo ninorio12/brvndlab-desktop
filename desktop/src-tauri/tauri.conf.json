@@ -1,7 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Brvndlab",
-  "version": "0.1.3",
+  "mainBinaryName": "Brvndlab",
+  "version": "0.1.4",
   "identifier": "com.brvndlab.desktop",
   "build": {
     "frontendDist": "https://app.brvndlab.com",
