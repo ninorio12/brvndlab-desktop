@@ -54,16 +54,10 @@ mac:
 
 dmg:
   title: Brvndlab
-  # Fenêtre d'installation classique : l'application à gauche, le dossier
-  # Applications à droite, on glisse de l'un à l'autre.
-  contents:
-    - x: 140
-      y: 200
-      type: file
-    - x: 400
-      y: 200
-      type: link
-      path: /Applications
+  # Disposition PAR DEFAUT (application a gauche, dossier Applications a
+  # droite) : les positions ecrites a la main faisaient echouer dmgbuild sur
+  # les machines de compilation macOS le 29/08, avec un hdiutil qui n'arrivait
+  # plus a demonter l'image. Le rendu par defaut est le meme.
 
 win:
   icon: ressources/icone.png
