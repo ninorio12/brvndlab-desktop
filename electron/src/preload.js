@@ -55,7 +55,27 @@ function relayerTheme () {
     const valeur = racine.getAttribute(auth ? 'data-brv-theme' : 'data-bvh-theme')
     return valeur === 'light' ? 'light' : 'dark'
   }
-  const envoyer = () => ipcRenderer.send('brvndlab:theme', lire())
+
+  /* LA COULEUR EXACTE, PAS UNE COULEUR APPROCHANTE.
+     Windows dessine ses boutons sur un aplat qu'il faut lui donner. Une teinte
+     choisie a la main a toujours fini par jurer : gris bleute contre un
+     en-tete blanc, beige contre une page blanche. On lit donc le fond reel de
+     l'en-tete quand il existe, celui de la page sinon. */
+  const enHex = (couleur) => {
+    const m = String(couleur).match(/\d+/g)
+    if (!m || m.length < 3) return null
+    return '#' + m.slice(0, 3).map((n) => Number(n).toString(16).padStart(2, '0')).join('')
+  }
+  const fond = () => {
+    try {
+      const entete = document.querySelector('.bvh-head')
+      const cible = entete || document.body
+      if (!cible) return null
+      return enHex(getComputedStyle(cible).backgroundColor)
+    } catch { return null }
+  }
+
+  const envoyer = () => ipcRenderer.send('brvndlab:theme', { theme: lire(), fond: fond() })
   envoyer()
   new MutationObserver(envoyer).observe(racine, {
     attributes: true,

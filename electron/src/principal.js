@@ -223,14 +223,23 @@ function creerFenetre () {
    rectangle noir dans le coin d'une application en thème clair. Le thème étant
    choisi par compte (et pas par le système), c'est la page qui nous le dit :
    le préchargement surveille l'attribut data-bvh-theme et le renvoie ici. */
-function habillageBarreWindows (theme) {
+function habillageBarreWindows (info) {
+  // Ancienne forme (une simple chaîne) tolérée : une fenêtre déjà ouverte peut
+  // encore tourner avec l'ancien préchargement pendant une mise à jour.
+  const theme = typeof info === 'string' ? info : info?.theme
+  const fond = typeof info === 'string' ? null : info?.fond
   const sombre = theme !== 'light'
   return {
-    // Les deux fonds du mood board : charbon en sombre, beige en clair. Le
-    // gris bleuté d'origine jurait avec le beige de la page.
-    color: sombre ? '#0C0C0B' : '#F3EEE4',
+    /* La couleur vient de la PAGE, pas d'une valeur choisie ici : c'est le fond
+       réel de l'en-tête, blanc en clair, charbon en sombre. Les teintes écrites
+       à la main juraient toujours avec quelque chose (rectangle gris bleuté
+       contre un en-tête blanc, vu le 29/08). Le repli garde des couleurs
+       correctes si la page ne répond pas. */
+    color: fond || (sombre ? '#141312' : '#FFFFFF'),
     symbolColor: sombre ? '#9A9A94' : '#55524C',
-    height: 48,
+    /* Même hauteur que l'en-tête Brvndlab : sinon la surcouche s'arrête au
+       milieu et dessine une marche dans le coin. */
+    height: 62,
   }
 }
 
