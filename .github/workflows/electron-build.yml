@@ -16,18 +16,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # UN JOB PAR IMAGE DISQUE. Construire les trois dmg a la suite sur la
-          # meme machine fait echouer hdiutil : les images se marchent dessus au
-          # demontage (vu le 29/08).
+          # UNE SEULE IMAGE MAC : universal, qui contient Apple Silicon et
+          # Intel. Les images par architecture echouent a la fabrication.
           - os: macos-latest
             label: macOS Universal
             cible: "--mac --universal"
-          - os: macos-latest
-            label: macOS Apple Silicon
-            cible: "--mac --arm64"
-          - os: macos-latest
-            label: macOS Intel
-            cible: "--mac --x64"
           - os: windows-latest
             label: Windows
             cible: "--win --x64 --arm64"

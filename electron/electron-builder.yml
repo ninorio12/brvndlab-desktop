@@ -35,12 +35,14 @@ mac:
   # Noms de fichiers STABLES (sans numero de version) : les liens de
   # telechargement du SaaS ne bougent donc jamais d'une version a l'autre.
   artifactName: Brvndlab-${arch}.${ext}
+  # UNIVERSAL SEUL. Il contient deja Apple Silicon ET Intel : personne n'a a
+  # savoir quelle puce il a. Les deux images separees ont ete tentees le 29/08
+  # et echouent a la fabrication (hdiutil n'arrive pas a demonter le volume),
+  # pour un gain qui n'existe pas cote utilisateur.
   target:
     - target: dmg
       arch:
         - universal
-        - arm64
-        - x64
   # Le runtime durci est EXIGÉ par la notarisation. On le laisse allumé dès
   # maintenant pour que le jour où le compte Apple arrive, il n'y ait rien à
   # changer : seuls les identifiants manquent.
