@@ -75,12 +75,46 @@ function relayerTheme () {
     } catch { return null }
   }
 
-  const envoyer = () => ipcRenderer.send('brvndlab:theme', { theme: lire(), fond: fond() })
+  /* ON RENVOIE DES QUE LA COULEUR CHANGE, ET C'ETAIT LA PANNE.
+     Le premier envoi part avant que la page n'ait construit son en-tete : a cet
+     instant `.bvh-head` n'existe pas encore et on lisait le fond du document,
+     qui vaut #EEF0F4, un gris bleute herite de l'ancienne charte. Cette valeur
+     restait ensuite affichee pour toujours, puisque plus rien ne la corrigeait.
+     On surveille donc aussi la construction de la page, et on ne parle que
+     lorsque la couleur a reellement change. */
+  let dernier = null
+  const envoyer = () => {
+    const etat = { theme: lire(), fond: fond() }
+    const signature = etat.theme + '|' + etat.fond
+    if (signature === dernier) return
+    dernier = signature
+    ipcRenderer.send('brvndlab:theme', etat)
+  }
   envoyer()
   new MutationObserver(envoyer).observe(racine, {
     attributes: true,
     attributeFilter: ['data-bvh-theme', 'data-brv-theme', 'class'],
   })
+  // L'en-tete arrive avec le rendu, et change a chaque navigation interne.
+  let minuteur = null
+  const surveiller = () => {
+    if (minuteur) clearTimeout(minuteur)
+    minuteur = setTimeout(envoyer, 120)
+  }
+  const brancher = () => {
+    if (!document.body) return false
+    new MutationObserver(surveiller).observe(document.body, { childList: true, subtree: true })
+    envoyer()
+    return true
+  }
+  if (!brancher()) document.addEventListener('DOMContentLoaded', brancher, { once: true })
+  // Filet des premieres secondes : certaines pages montent leur en-tete apres
+  // un aller-retour reseau, hors de toute mutation observable a temps.
+  let restants = 20
+  const battement = setInterval(() => {
+    envoyer()
+    if (--restants <= 0) clearInterval(battement)
+  }, 500)
 }
 if (document.documentElement) relayerTheme()
 else document.addEventListener('DOMContentLoaded', relayerTheme, { once: true })
