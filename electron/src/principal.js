@@ -154,7 +154,11 @@ function creerFenetre () {
        Linux : on garde le cadre standard, les environnements de bureau y sont
        trop divers pour parier sur un dessin maison. */
     titleBarStyle: mac ? 'hiddenInset' : windows ? 'hidden' : 'default',
-    trafficLightPosition: mac ? { x: 18, y: 18 } : undefined,
+    /* Les pastilles plus près du coin (31/08). À 18/18 elles flottaient au
+       milieu de la bande et écrasaient l'espace avant le logo. macOS fixe
+       leur TAILLE, on ne peut agir que sur leur position : on les remonte et
+       on les rapproche, comme le font Linear ou VS Code. */
+    trafficLightPosition: mac ? { x: 14, y: 14 } : undefined,
     titleBarOverlay: windows ? habillageBarreWindows('dark') : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
