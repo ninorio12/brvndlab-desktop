@@ -166,6 +166,16 @@ function creerFenetre () {
       nodeIntegration: false,
       sandbox: true,
       spellcheck: true,
+      /* LA FENÊTRE NE S'ENDORT PLUS EN ARRIÈRE-PLAN (31/08).
+         Par défaut, dès que la fenêtre est masquée, le système suspend les
+         animations et ralentit les minuteurs de la page. Ça semble raisonnable,
+         sauf qu'une génération de script dure parfois plusieurs minutes : on va
+         évidemment faire autre chose pendant ce temps. Au retour, les fondus
+         d'entrée n'avaient jamais tourné, le contenu restait à opacité zéro, et
+         comme la fenêtre est peinte en noir, on retrouvait un écran entièrement
+         noir dont on ne pouvait pas sortir. Le site est corrigé de son côté ;
+         ici on supprime la cause racine côté application. */
+      backgroundThrottling: false,
       // Le préchargement est bac-à-sable : il n'a pas accès à `app`. On lui
       // passe donc la version et le système par la ligne de commande, seule
       // voie disponible avant le chargement de la page.
@@ -234,6 +244,21 @@ function creerFenetre () {
     }
 
     ouvrirDehors(url)
+  })
+
+  /* UNE FENÊTRE FIGÉE SE VOIT ET SE RÉPARE (31/08). Sans ces deux écouteurs,
+     un rendu bloqué ou un processus graphique tombé laissait la fenêtre peinte
+     avec sa seule couleur de fond : du noir, sans texte, sans bouton, et sans
+     autre issue que quitter l'application. */
+  fenetre.webContents.on('unresponsive', () => {
+    console.warn('[fenetre] rendu figé, on recharge')
+    if (fenetre && !fenetre.isDestroyed()) fenetre.webContents.reload()
+  })
+  app.on('child-process-gone', (_e, details) => {
+    console.warn('[fenetre] processus perdu : ' + details.type + ' / ' + details.reason)
+    if (details.type === 'GPU' && fenetre && !fenetre.isDestroyed()) {
+      fenetre.webContents.reload()
+    }
   })
 
   fenetre.webContents.on('did-fail-load', (_e, code, _desc, url, principal) => {
