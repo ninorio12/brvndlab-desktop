@@ -97,6 +97,19 @@ function ouvrableDehors (url) {
 function cheminDepuisProtocole (lien) {
   const u = analyser(lien)
   if (!u || u.protocol !== 'brvndlab:') return null
+
+  /* LE RETOUR DE CONNEXION (30/08). Le navigateur, une fois la connexion
+     Google ou Apple faite, rend la main par brvndlab://connexion?ticket=…
+     Le jeton doit arriver ENTIER jusqu'à l'écran de connexion : le chemin
+     générique plus bas recolle bien la requête, mais seulement après être
+     passé par « /connexion », une page qui n'existe pas. On traite ce cas
+     ici, et on ne laisse passer qu'un jeton d'allure raisonnable. */
+  if (u.hostname === 'connexion') {
+    const ticket = u.searchParams.get('ticket')
+    if (!ticket || !/^[A-Za-z0-9._-]{16,512}$/.test(ticket)) return '/sign-in'
+    return '/sign-in?ticket=' + encodeURIComponent(ticket)
+  }
+
   let chemin = u.searchParams.get('chemin')
   if (!chemin && u.hostname) chemin = '/' + u.hostname + (u.pathname || '')
   if (!chemin) return '/home'

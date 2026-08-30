@@ -20,6 +20,8 @@ let fenetre = null
 let miseAJour = null
 /** Horodatage du dernier départ vers le navigateur : sert à proposer d'actualiser au retour. */
 let attenteRetourNavigateur = 0
+/** Chemin reçu par lien brvndlab:// avant que la fenêtre existe (démarrage à froid). */
+let cheminAuDemarrage = null
 
 /* ─── UNE SEULE INSTANCE ────────────────────────────────────────────────────
    Sans ce verrou, un double-clic sur l'icône (ou un lien brvndlab:// sous
@@ -178,21 +180,24 @@ function creerFenetre () {
     if (estInterne(url)) return
     e.preventDefault()
 
-    /* SE CONNECTER À BRVNDLAB PAR GOOGLE OU APPLE : PAS ENCORE ICI.
-       Envoyer ce cas dans le navigateur donnerait une session ouverte DANS LE
-       NAVIGATEUR et une fenêtre restée déconnectée : un cul-de-sac silencieux,
-       le pire résultat possible. Tant que le jeton de transfert Clerk n'est pas
-       branché (voir README), on le dit franchement et on reste sur place.
-       À ne pas confondre avec le branchement d'un compte tiers depuis
-       l'application, qui part bien dehors et revient par brvndlab://. */
+    /* SE CONNECTER PAR GOOGLE OU APPLE : ÇA MARCHE MAINTENANT (30/08).
+       Google refuse sa page de connexion dans une fenêtre sans barre
+       d'adresse, et il a raison. On ne l'affiche donc toujours pas ici : on
+       envoie la personne dans le navigateur du système, sur une page de
+       rebond qui, une fois la connexion faite, rend la main à l'application
+       par brvndlab://connexion?ticket=… Le jeton ne vaut qu'une minute et
+       n'est délivré qu'à celui qui vient de se connecter, pour lui-même.
+       Avant, on affichait une excuse et on restait sur place. */
     if (estPageDeConnexionTiers(url) && estEcranDeConnexion(fenetre.webContents.getURL())) {
+      attenteRetourNavigateur = Date.now()
+      shell.openExternal(siteBase() + '/desktop/connexion')
       dialog.showMessageBox(fenetre, {
         type: 'info',
         title: 'Connexion',
-        message: 'Se connecter par Google ou Apple ne marche pas encore ici.',
+        message: 'On finit la connexion dans ton navigateur.',
         detail:
-          "Dans l'application, connecte-toi avec ton adresse et ton mot de passe. "
-          + 'Depuis un navigateur, les deux boutons fonctionnent normalement.',
+          "Ton navigateur vient de s'ouvrir : connecte-toi avec Google ou Apple. "
+          + "L'application reprend la main toute seule juste après.",
         buttons: ['Compris'],
         noLink: true,
       })
@@ -215,7 +220,9 @@ function creerFenetre () {
   fenetre.on('closed', () => { fenetre = null })
 
   nativeTheme.themeSource = 'system'
-  fenetre.loadURL(siteBase())
+  const depart = cheminAuDemarrage
+  cheminAuDemarrage = null
+  fenetre.loadURL(depart ? new URL(depart, siteBase()).toString() : siteBase())
 }
 
 /* SOUS WINDOWS, LES BOUTONS SYSTÈME SONT DESSINÉS PAR WINDOWS.
@@ -289,7 +296,15 @@ function suivreLienProtocole (lien) {
   const chemin = cheminDepuisProtocole(lien)
   if (!chemin) return
   attenteRetourNavigateur = 0
-  if (!fenetre) { creerFenetre(); return }
+  if (!fenetre) {
+    /* Application fermée quand le lien arrive : on retenait la seule
+       ouverture, pas la destination, et le jeton de connexion se perdait en
+       route (fenêtre sur l'accueil, personne connecté). On garde le chemin
+       et on le charge dès que la fenêtre est prête. */
+    cheminAuDemarrage = chemin
+    creerFenetre()
+    return
+  }
   ouvrirChemin(chemin)
 }
 
