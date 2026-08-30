@@ -1,0 +1,26 @@
+name: Test des identifiants Apple
+
+# Diagnostic seul : aucune construction, aucune publication. On demande a Apple
+# l'historique de notarisation, ce qui suffit a savoir si le trio identifiant,
+# mot de passe et equipe est accepte. Deux minutes au lieu d'une compilation.
+on:
+  workflow_dispatch:
+
+jobs:
+  verifier:
+    runs-on: macos-latest
+    steps:
+      - name: Interroger Apple
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          echo "identifiant fourni : ${APPLE_ID:0:4}...${APPLE_ID: -10}"
+          echo "equipe fournie     : $APPLE_TEAM_ID"
+          echo "longueur du mot de passe : ${#APPLE_APP_SPECIFIC_PASSWORD} caracteres (attendu 19)"
+          echo "---"
+          xcrun notarytool history \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" 2>&1 | head -20
