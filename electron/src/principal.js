@@ -1,6 +1,6 @@
 'use strict'
 
-const { app, BrowserWindow, dialog, ipcMain, session, shell, nativeTheme } = require('electron')
+const { app, BrowserWindow, ipcMain, session, shell, nativeTheme } = require('electron')
 const path = require('node:path')
 const { construireMenu } = require('./menu')
 const { installerMiseAJour } = require('./maj')
@@ -120,19 +120,14 @@ function nettoyerIdentiteNavigateur () {
    fenêtre secondaire ouverte par Clerk. Les deux doivent se comporter
    pareil, sinon l'un des deux laisse la session dans le navigateur. */
 function partirSeConnecterDehors () {
+  /* AUCUNE BOITE DE DIALOGUE (30/08). On en affichait une, « On finit la
+     connexion dans ton navigateur », qu'il fallait fermer à la main en
+     revenant. Deux écrans à lire pour un passage d'une seconde, et une
+     fenêtre système par-dessus l'application : exactement la friction qu'on
+     voulait supprimer. La page de connexion dit déjà ce qu'il faut, à sa
+     place et dans la charte. Le navigateur s'ouvre, c'est tout. */
   attenteRetourNavigateur = Date.now()
   shell.openExternal(siteBase() + '/desktop/connexion')
-  if (!fenetre || fenetre.isDestroyed()) return
-  dialog.showMessageBox(fenetre, {
-    type: 'info',
-    title: 'Connexion',
-    message: 'On finit la connexion dans ton navigateur.',
-    detail:
-      "Ton navigateur vient de s'ouvrir : connecte-toi avec Google ou Apple. "
-      + "L'application reprend la main toute seule juste après.",
-    buttons: ['Compris'],
-    noLink: true,
-  })
 }
 
 function creerFenetre () {
