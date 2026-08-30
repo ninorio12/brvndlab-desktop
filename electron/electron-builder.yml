@@ -50,9 +50,16 @@ mac:
   gatekeeperAssess: false
   entitlements: ressources/droits.mac.plist
   entitlementsInherit: ressources/droits.mac.plist
-  # `notarize: false` tant qu'aucun compte Apple n'existe. Passer à true (et
-  # poser APPLE_ID / APPLE_APP_SPECIFIC_PASSWORD / APPLE_TEAM_ID) suffira.
-  notarize: false
+  # NOTARISATION. Le compte Apple existe depuis le 30/08/2026 et le certificat
+  # Developer ID est branche dans la chaine de construction. Il ne manque plus
+  # que APPLE_ID et APPLE_APP_SPECIFIC_PASSWORD dans les secrets du depot :
+  # tant qu'ils sont absents, electron-builder signe et saute la notarisation
+  # sans faire echouer la construction.
+  #
+  # ATTENTION : signer NE SUFFIT PAS. Depuis Catalina, macOS exige la signature
+  # ET le tampon de notarisation. Une application signee mais non notarisee
+  # declenche encore l'avertissement au premier lancement.
+  notarize: true
 
 dmg:
   title: Brvndlab
