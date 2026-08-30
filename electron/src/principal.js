@@ -109,6 +109,32 @@ function nettoyerIdentiteNavigateur () {
   session.defaultSession.setUserAgent(propre)
 }
 
+
+/* PARTIR SE CONNECTER DANS LE NAVIGATEUR, ET REVENIR.
+   Google interdit sa page de connexion dans une fenêtre d'application (règle
+   « embedded user-agent » de ses politiques OAuth) : sans barre d'adresse,
+   personne ne peut vérifier où il tape son mot de passe. On ouvre donc le
+   navigateur du système sur notre page de rebond, qui rendra la main à
+   l'application par brvndlab://connexion?ticket=… une fois la connexion
+   faite. Deux chemins mènent ici : une navigation dans la fenêtre, et une
+   fenêtre secondaire ouverte par Clerk. Les deux doivent se comporter
+   pareil, sinon l'un des deux laisse la session dans le navigateur. */
+function partirSeConnecterDehors () {
+  attenteRetourNavigateur = Date.now()
+  shell.openExternal(siteBase() + '/desktop/connexion')
+  if (!fenetre || fenetre.isDestroyed()) return
+  dialog.showMessageBox(fenetre, {
+    type: 'info',
+    title: 'Connexion',
+    message: 'On finit la connexion dans ton navigateur.',
+    detail:
+      "Ton navigateur vient de s'ouvrir : connecte-toi avec Google ou Apple. "
+      + "L'application reprend la main toute seule juste après.",
+    buttons: ['Compris'],
+    noLink: true,
+  })
+}
+
 function creerFenetre () {
   const mac = process.platform === 'darwin'
   const windows = process.platform === 'win32'
@@ -169,9 +195,20 @@ function creerFenetre () {
   }
 
   fenetre.webContents.setWindowOpenHandler(({ url }) => {
-    // Toute fenêtre secondaire part dehors : les seules de l'application sont
-    // les branchements de comptes (Nango, YouTube, Instagram), justement ceux
-    // qu'une fenêtre d'application n'a pas le droit d'afficher.
+    /* MÊME TRAITEMENT QUE LA NAVIGATION DIRECTE (30/08). Clerk ouvre parfois
+       le fournisseur dans une fenêtre secondaire plutôt qu'en changeant de
+       page. Envoyer cette adresse telle quelle dans le navigateur ouvrait
+       bien Google, mais la session se créait DANS le navigateur et la fenêtre
+       de l'application restait déconnectée : le cul-de-sac qu'on vient de
+       supprimer sur l'autre chemin. On passe donc par la même page de rebond,
+       qui rend la main à l'application une fois la connexion faite. */
+    if (estPageDeConnexionTiers(url) && estEcranDeConnexion(fenetre.webContents.getURL())) {
+      partirSeConnecterDehors()
+      return { action: 'deny' }
+    }
+    // Toute autre fenêtre secondaire part dehors : les seules de l'application
+    // sont les branchements de comptes (Nango, YouTube, Instagram), justement
+    // ceux qu'une fenêtre d'application n'a pas le droit d'afficher.
     ouvrirDehors(url)
     return { action: 'deny' }
   })
@@ -189,18 +226,7 @@ function creerFenetre () {
        n'est délivré qu'à celui qui vient de se connecter, pour lui-même.
        Avant, on affichait une excuse et on restait sur place. */
     if (estPageDeConnexionTiers(url) && estEcranDeConnexion(fenetre.webContents.getURL())) {
-      attenteRetourNavigateur = Date.now()
-      shell.openExternal(siteBase() + '/desktop/connexion')
-      dialog.showMessageBox(fenetre, {
-        type: 'info',
-        title: 'Connexion',
-        message: 'On finit la connexion dans ton navigateur.',
-        detail:
-          "Ton navigateur vient de s'ouvrir : connecte-toi avec Google ou Apple. "
-          + "L'application reprend la main toute seule juste après.",
-        buttons: ['Compris'],
-        noLink: true,
-      })
+      partirSeConnecterDehors()
       return
     }
 

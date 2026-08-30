@@ -54,11 +54,25 @@ function estPageDeConnexionTiers (url) {
   return HOTES_CONNEXION.includes(u.host)
 }
 
-/** Vrai si la page affichée est l'écran de connexion ou d'inscription de Brvndlab. */
+/** Vrai si la page affichée fait partie d'un parcours de connexion Brvndlab.
+ *
+ *  ATTENTION AU REBOND PAR CLERK (30/08) : en lançant une connexion Google,
+ *  Clerk ne saute pas directement chez Google. Il passe d'abord par son propre
+ *  domaine, clerk.brvndlab.com, qui est chez nous et s'affiche donc dans la
+ *  fenêtre. Au moment où la navigation vers Google arrive, la page courante
+ *  n'est plus « /sign-in » mais cette page de Clerk : une détection basée sur
+ *  le seul chemin ratait le coche et laissait partir Google tout nu dans le
+ *  navigateur, sans le rebond qui rend la main à l'application. */
 function estEcranDeConnexion (url) {
   const u = analyser(url)
   if (!u) return false
-  return u.pathname.startsWith('/sign-in') || u.pathname.startsWith('/sign-up')
+  if (u.host === 'clerk.brvndlab.com') return true
+  return (
+    u.pathname.startsWith('/sign-in') ||
+    u.pathname.startsWith('/sign-up') ||
+    u.pathname.startsWith('/sso-callback') ||
+    u.pathname.startsWith('/desktop/connexion')
+  )
 }
 
 function analyser (url) {
