@@ -119,15 +119,19 @@ function nettoyerIdentiteNavigateur () {
    faite. Deux chemins mènent ici : une navigation dans la fenêtre, et une
    fenêtre secondaire ouverte par Clerk. Les deux doivent se comporter
    pareil, sinon l'un des deux laisse la session dans le navigateur. */
-function partirSeConnecterDehors () {
+function partirSeConnecterDehors (urlDuFournisseur) {
   /* AUCUNE BOITE DE DIALOGUE (30/08). On en affichait une, « On finit la
      connexion dans ton navigateur », qu'il fallait fermer à la main en
      revenant. Deux écrans à lire pour un passage d'une seconde, et une
      fenêtre système par-dessus l'application : exactement la friction qu'on
      voulait supprimer. La page de connexion dit déjà ce qu'il faut, à sa
      place et dans la charte. Le navigateur s'ouvre, c'est tout. */
+  /* On emporte le fournisseur : le navigateur part DIRECTEMENT sur son écran
+     au lieu de rouvrir notre page de connexion, où il faudrait recliquer le
+     même bouton. On le déduit de l'adresse qu'on vient d'intercepter. */
+  const f = String(urlDuFournisseur || '').includes('appleid.apple.com') ? 'apple' : 'google'
   attenteRetourNavigateur = Date.now()
-  shell.openExternal(siteBase() + '/desktop/connexion')
+  shell.openExternal(siteBase() + '/desktop/connexion?f=' + f)
 }
 
 function creerFenetre () {
@@ -198,7 +202,7 @@ function creerFenetre () {
        supprimer sur l'autre chemin. On passe donc par la même page de rebond,
        qui rend la main à l'application une fois la connexion faite. */
     if (estPageDeConnexionTiers(url) && estEcranDeConnexion(fenetre.webContents.getURL())) {
-      partirSeConnecterDehors()
+      partirSeConnecterDehors(url)
       return { action: 'deny' }
     }
     // Toute autre fenêtre secondaire part dehors : les seules de l'application
@@ -221,7 +225,7 @@ function creerFenetre () {
        n'est délivré qu'à celui qui vient de se connecter, pour lui-même.
        Avant, on affichait une excuse et on restait sur place. */
     if (estPageDeConnexionTiers(url) && estEcranDeConnexion(fenetre.webContents.getURL())) {
-      partirSeConnecterDehors()
+      partirSeConnecterDehors(url)
       return
     }
 
