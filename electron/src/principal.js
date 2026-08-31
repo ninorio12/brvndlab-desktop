@@ -1,6 +1,6 @@
 'use strict'
 
-const { app, BrowserWindow, Notification, ipcMain, session, shell, nativeTheme } = require('electron')
+const { app, BrowserWindow, Notification, ipcMain, nativeImage, net, session, shell, nativeTheme } = require('electron')
 const path = require('node:path')
 const { construireMenu } = require('./menu')
 const { installerMiseAJour } = require('./maj')
@@ -396,18 +396,40 @@ ipcMain.on('brvndlab:ouvrir-dehors', (_e, url) => {
    Le clic ramène la fenêtre et emmène la personne à l'endroit concerné.
    Un échec n'est jamais silencieux : il repart vers la page, qui sait alors
    qu'elle doit se rabattre sur sa bannière interne. */
-function poserBanniere (charge) {
+/* LA PHOTO DE LA PERSONNE DANS LA BANNIÈRE.
+   macOS accepte une image, mais pas une adresse : il lui faut les octets. On
+   va donc chercher la photo nous-mêmes, une fois, et on la lui donne toute
+   faite. Deux secondes de patience maximum : une bannière qui arrive sans
+   visage vaut mieux qu'une bannière qui n'arrive pas. */
+async function imageDepuisAdresse (adresse) {
+  if (typeof adresse !== 'string' || !/^https?:\/\//.test(adresse)) return null
+  try {
+    const reponse = await Promise.race([
+      net.fetch(adresse),
+      new Promise((_r, rejeter) => setTimeout(() => rejeter(new Error('trop long')), 2000)),
+    ])
+    if (!reponse || !reponse.ok) return null
+    const octets = Buffer.from(await reponse.arrayBuffer())
+    const image = nativeImage.createFromBuffer(octets)
+    return image.isEmpty() ? null : image
+  } catch { return null }
+}
+
+async function poserBanniere (charge) {
   const titre = String((charge && charge.titre) || '').slice(0, 120)
   const corps = String((charge && charge.corps) || '').slice(0, 220)
   const lien = charge && typeof charge.lien === 'string' ? charge.lien : null
   if (!titre) return { pose: false, raison: 'titre vide' }
   if (!Notification.isSupported()) return { pose: false, raison: 'systeme sans bannieres' }
 
+  const visage = await imageDepuisAdresse(charge && charge.image)
+
   try {
     const n = new Notification({
       title: titre,
       body: corps,
       silent: false,
+      ...(visage ? { icon: visage } : {}),
       // Deux annonces pour le même évènement n'en font qu'une : le système
       // remplace la précédente au lieu d'empiler.
       ...(charge && charge.etiquette ? { tag: String(charge.etiquette) } : {}),
