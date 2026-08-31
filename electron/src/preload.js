@@ -174,8 +174,9 @@ contextBridge.exposeInMainWorld('brvndlab', {
     etiquette: charge && charge.etiquette ? String(charge.etiquette) : null,
     // La photo de la personne qui a agi, si la page en connaît une, et sa
     // version ronde quand la page a pu la préparer.
-    image: charge && charge.image ? String(charge.image) : null,
-    imageRonde: charge && charge.imageRonde ? String(charge.imageRonde) : null,
+    // Bornées ici aussi : ce qui traverse l'IPC ne doit jamais être sans limite.
+    image: charge && charge.image ? String(charge.image).slice(0, 2048) : null,
+    imageRonde: charge && charge.imageRonde ? String(charge.imageRonde).slice(0, 700 * 1024) : null,
   }),
 
   /** Le nombre affiché sur l'icône du Dock (macOS). 0 efface la pastille. */

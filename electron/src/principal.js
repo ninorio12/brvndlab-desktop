@@ -401,27 +401,60 @@ ipcMain.on('brvndlab:ouvrir-dehors', (_e, url) => {
    va donc chercher la photo nous-mêmes, une fois, et on la lui donne toute
    faite. Deux secondes de patience maximum : une bannière qui arrive sans
    visage vaut mieux qu'une bannière qui n'arrive pas. */
+/* CE QUI EST AUTORISÉ À DEVENIR UNE VIGNETTE, ET RIEN D'AUTRE.
+   Audit du 31/08 : cette fonction prenait l'adresse que la page lui donnait et
+   allait la chercher depuis le processus principal, avec Node complet et sans
+   bac à sable. Trois abus possibles, tous réels :
+     - atteindre le réseau local de la personne (une adresse en 192.168.x.x
+       part de SA machine, hors de portée de toute règle du navigateur) ;
+     - faire enfler la mémoire : le délai de deux secondes ne couvrait que
+       l'arrivée des en-têtes, le corps était ensuite avalé en entier ;
+     - sortir de la donnée malgré la politique de sécurité de la page, puisque
+       la requête ne part pas de la page.
+   On ferme les trois : seuls les hôtes qui servent nos photos sont acceptés,
+   le corps est plafonné, et le data URI a une longueur maximale. */
+const HOTES_IMAGES = new Set([
+  'app.brvndlab.com',
+  'img.clerk.com',
+  'images.clerk.dev',
+])
+const POIDS_IMAGE_MAX = 512 * 1024      // une photo de profil ne pèse pas plus
+const DATA_URI_MAX = 700 * 1024         // ~512 Ko d'image une fois encodée
+
+function hoteAutorise (adresse) {
+  try {
+    const u = new URL(adresse)
+    if (u.protocol !== 'https:') return false
+    if (HOTES_IMAGES.has(u.host)) return true
+    // Le stockage de Convex sert nos propres fichiers.
+    return u.host.endsWith('.convex.cloud')
+  } catch { return false }
+}
+
 async function imageDepuisAdresse (adresse) {
   if (typeof adresse !== 'string' || !adresse) return null
-  /* IMAGE DÉJÀ TAILLÉE, FOURNIE PAR LA PAGE.
-     La page sait découper la photo en rond et la mettre à la bonne définition ;
-     elle nous la passe alors directement, en data URI. On refusait tout ce qui
-     ne commençait pas par http, donc ces photos-là disparaissaient purement et
-     simplement de la bannière. */
+
+  /* Image déjà taillée par la page (ronde, à la bonne définition) : elle
+     arrive en data URI, donc sans aucune requête réseau. */
   if (adresse.startsWith('data:image/')) {
+    if (adresse.length > DATA_URI_MAX) return null
     try {
       const image = nativeImage.createFromDataURL(adresse)
       return image.isEmpty() ? null : image
     } catch { return null }
   }
-  if (!/^https?:\/\//.test(adresse)) return null
+
+  if (!hoteAutorise(adresse)) return null
   try {
     const reponse = await Promise.race([
-      net.fetch(adresse),
+      net.fetch(adresse, { redirect: 'error', credentials: 'omit' }),
       new Promise((_r, rejeter) => setTimeout(() => rejeter(new Error('trop long')), 2000)),
     ])
     if (!reponse || !reponse.ok) return null
+    const annonce = Number(reponse.headers.get('content-length') || 0)
+    if (annonce > POIDS_IMAGE_MAX) return null
     const octets = Buffer.from(await reponse.arrayBuffer())
+    if (octets.length > POIDS_IMAGE_MAX) return null
     const image = nativeImage.createFromBuffer(octets)
     return image.isEmpty() ? null : image
   } catch { return null }
@@ -448,7 +481,7 @@ async function poserBanniere (charge) {
       ...(visage ? { icon: visage } : {}),
       // Deux annonces pour le même évènement n'en font qu'une : le système
       // remplace la précédente au lieu d'empiler.
-      ...(charge && charge.etiquette ? { tag: String(charge.etiquette) } : {}),
+      ...(charge && charge.etiquette ? { tag: String(charge.etiquette).slice(0, 80) } : {}),
     })
     n.on('click', () => {
       if (!fenetre || fenetre.isDestroyed()) { creerFenetre(); return }
