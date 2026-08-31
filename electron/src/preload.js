@@ -172,8 +172,10 @@ contextBridge.exposeInMainWorld('brvndlab', {
     corps: String((charge && charge.corps) || ''),
     lien: charge && charge.lien ? String(charge.lien) : null,
     etiquette: charge && charge.etiquette ? String(charge.etiquette) : null,
-    // La photo de la personne qui a agi, si la page en connaît une.
+    // La photo de la personne qui a agi, si la page en connaît une, et sa
+    // version ronde quand la page a pu la préparer.
     image: charge && charge.image ? String(charge.image) : null,
+    imageRonde: charge && charge.imageRonde ? String(charge.imageRonde) : null,
   }),
 
   /** Le nombre affiché sur l'icône du Dock (macOS). 0 efface la pastille. */

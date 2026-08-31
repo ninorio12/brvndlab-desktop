@@ -402,7 +402,19 @@ ipcMain.on('brvndlab:ouvrir-dehors', (_e, url) => {
    faite. Deux secondes de patience maximum : une bannière qui arrive sans
    visage vaut mieux qu'une bannière qui n'arrive pas. */
 async function imageDepuisAdresse (adresse) {
-  if (typeof adresse !== 'string' || !/^https?:\/\//.test(adresse)) return null
+  if (typeof adresse !== 'string' || !adresse) return null
+  /* IMAGE DÉJÀ TAILLÉE, FOURNIE PAR LA PAGE.
+     La page sait découper la photo en rond et la mettre à la bonne définition ;
+     elle nous la passe alors directement, en data URI. On refusait tout ce qui
+     ne commençait pas par http, donc ces photos-là disparaissaient purement et
+     simplement de la bannière. */
+  if (adresse.startsWith('data:image/')) {
+    try {
+      const image = nativeImage.createFromDataURL(adresse)
+      return image.isEmpty() ? null : image
+    } catch { return null }
+  }
+  if (!/^https?:\/\//.test(adresse)) return null
   try {
     const reponse = await Promise.race([
       net.fetch(adresse),
@@ -422,7 +434,11 @@ async function poserBanniere (charge) {
   if (!titre) return { pose: false, raison: 'titre vide' }
   if (!Notification.isSupported()) return { pose: false, raison: 'systeme sans bannieres' }
 
-  const visage = await imageDepuisAdresse(charge && charge.image)
+  /* La ronde d'abord, l'originale en secours : si la page n'a pas pu préparer
+     l'image (photo servie sans autorisation de lecture, réseau lent), il vaut
+     mieux un visage carré que pas de visage. */
+  const visage = (await imageDepuisAdresse(charge && charge.imageRonde))
+    || (await imageDepuisAdresse(charge && charge.image))
 
   try {
     const n = new Notification({
