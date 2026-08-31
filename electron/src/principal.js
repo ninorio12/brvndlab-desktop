@@ -1,6 +1,6 @@
 'use strict'
 
-const { app, BrowserWindow, ipcMain, session, shell, nativeTheme } = require('electron')
+const { app, BrowserWindow, Notification, ipcMain, session, shell, nativeTheme } = require('electron')
 const path = require('node:path')
 const { construireMenu } = require('./menu')
 const { installerMiseAJour } = require('./maj')
@@ -377,6 +377,70 @@ ipcMain.on('brvndlab:redemarrer-pour-maj', () => {
 ipcMain.on('brvndlab:ouvrir-dehors', (_e, url) => {
   if (typeof url === 'string') ouvrirDehors(url)
 })
+
+/* ─── LES BANNIÈRES DU SYSTÈME ──────────────────────────────────────────────
+   Ce que la page ne peut pas faire seule, et pourquoi ce chemin existe.
+
+   Dans un navigateur, une bannière passe par le service worker et par la
+   permission web. Dans l'application, ces deux étages n'apportent rien et
+   ajoutent deux façons d'échouer en silence : un service worker qui ne
+   s'enregistre pas, une permission restée « default ». On court-circuite : la
+   page dit ce qu'elle veut annoncer, le processus principal le demande au
+   système. C'est ce que fait Slack, et c'est pour ça que ses bannières
+   arrivent quand on est ailleurs.
+
+   macOS n'affiche ces bannières que si l'application est signée : elle l'est
+   (Developer ID, notarisée). La première demande fait apparaître l'invite
+   d'autorisation du système ; ensuite ça se règle dans Réglages, Notifications.
+
+   Le clic ramène la fenêtre et emmène la personne à l'endroit concerné.
+   Un échec n'est jamais silencieux : il repart vers la page, qui sait alors
+   qu'elle doit se rabattre sur sa bannière interne. */
+function poserBanniere (charge) {
+  const titre = String((charge && charge.titre) || '').slice(0, 120)
+  const corps = String((charge && charge.corps) || '').slice(0, 220)
+  const lien = charge && typeof charge.lien === 'string' ? charge.lien : null
+  if (!titre) return { pose: false, raison: 'titre vide' }
+  if (!Notification.isSupported()) return { pose: false, raison: 'systeme sans bannieres' }
+
+  try {
+    const n = new Notification({
+      title: titre,
+      body: corps,
+      silent: false,
+      // Deux annonces pour le même évènement n'en font qu'une : le système
+      // remplace la précédente au lieu d'empiler.
+      ...(charge && charge.etiquette ? { tag: String(charge.etiquette) } : {}),
+    })
+    n.on('click', () => {
+      if (!fenetre || fenetre.isDestroyed()) { creerFenetre(); return }
+      if (fenetre.isMinimized()) fenetre.restore()
+      fenetre.show()
+      fenetre.focus()
+      if (app.dock && typeof app.dock.show === 'function') app.dock.show()
+      if (lien) ouvrirChemin(lien)
+    })
+    /* macOS refuse d'afficher pour une application non signée, et le dit ici.
+       On le renvoie à la page : c'est le seul endroit d'où l'on peut le voir. */
+    n.on('failed', (_e, erreur) => envoyerAuRendu({ type: 'banniere-refusee', erreur: String(erreur || '') }))
+    n.show()
+    return { pose: true }
+  } catch (e) {
+    return { pose: false, raison: String((e && e.message) || e) }
+  }
+}
+
+ipcMain.handle('brvndlab:notifier', (_e, charge) => poserBanniere(charge))
+
+/* La pastille du Dock : le nombre de notifications non lues, tel que la page
+   le connaît. Sur Windows et Linux, l'appel n'existe pas : on ne fait rien. */
+ipcMain.on('brvndlab:pastille', (_e, n) => {
+  const nombre = Number(n)
+  if (!Number.isFinite(nombre) || nombre < 0) return
+  if (process.platform !== 'darwin') return
+  try { app.setBadgeCount(Math.round(nombre)) } catch { /* pastille indisponible */ }
+})
+
 ipcMain.on('brvndlab:theme', (_e, theme) => {
   if (process.platform !== 'win32' || !fenetre || fenetre.isDestroyed()) return
   try { fenetre.setTitleBarOverlay(habillageBarreWindows(theme)) } catch { /* fenêtre sans surcouche */ }

@@ -161,6 +161,23 @@ contextBridge.exposeInMainWorld('brvndlab', {
   ouvrirDehors: (url) => ipcRenderer.send('brvndlab:ouvrir-dehors', String(url || '')),
 
   /**
+   * Demande au système une bannière, celle qui apparaît même quand on est dans
+   * une autre application. Rend { pose: true } si le système l'a acceptée,
+   * sinon { pose: false, raison } : la page peut alors se rabattre sur sa
+   * propre bannière au lieu de croire que la personne a été prévenue.
+   *   notifier({ titre, corps, lien, etiquette })
+   */
+  notifier: (charge) => ipcRenderer.invoke('brvndlab:notifier', {
+    titre: String((charge && charge.titre) || ''),
+    corps: String((charge && charge.corps) || ''),
+    lien: charge && charge.lien ? String(charge.lien) : null,
+    etiquette: charge && charge.etiquette ? String(charge.etiquette) : null,
+  }),
+
+  /** Le nombre affiché sur l'icône du Dock (macOS). 0 efface la pastille. */
+  pastille: (n) => ipcRenderer.send('brvndlab:pastille', Number(n) || 0),
+
+  /**
    * S'abonne aux évènements du bureau. Rend la fonction de désabonnement, pour
    * que React puisse nettoyer proprement.
    * Types émis : « maj-prete », « parti-au-navigateur », « retour-navigateur ».
