@@ -48,49 +48,6 @@ const HOTES_CONNEXION = [
   'www.instagram.com',
 ]
 
-/* ─── BRANCHER UN COMPTE : LA FENÊTRE RESTE DANS L'APPLICATION ──────────────
-
-   Se CONNECTER à Brvndlab et BRANCHER un compte YouTube ou Instagram sont deux
-   gestes que tout opposait, et qu'on traitait pareil : toute fenêtre secondaire
-   partait dans le navigateur. Pour la connexion c'est la seule voie possible,
-   Google refusant sa page dans une fenêtre sans barre d'adresse. Pour un
-   branchement, c'était une impasse : la page d'autorisation s'ouvrait bien
-   dehors, mais elle rend la main à celle qui l'a ouverte (`window.opener`), et
-   un onglet de navigateur n'en a aucune. L'autorisation partait donc dans le
-   vide, l'application n'apprenait jamais que le compte était branché, et rien
-   ne remontait. C'est le défaut signalé sur YouTube et Instagram.
-
-   On garde donc ces fenêtres à l'intérieur, où elles retrouvent leur ouvreuse
-   et se referment toutes seules, exactement comme dans un navigateur. La seule
-   exception reste Google, qui refuse : lui part dehors, et le retour de focus
-   propose de recharger.
-
-   Liste EXPLICITE plutôt qu'un « tout sauf Google » : une fenêtre secondaire
-   est une porte, on nomme celles qu'on ouvre. */
-const HOTES_BRANCHEMENT = [
-  'zernio.com',
-  'www.zernio.com',
-  'api.nango.dev',
-  'app.nango.dev',
-  'www.facebook.com',
-  'facebook.com',
-  'api.instagram.com',
-  'www.instagram.com',
-  'business.facebook.com',
-]
-
-/** Google et Apple refusent une fenêtre sans barre d'adresse : eux sortent. */
-const HOTES_QUI_REFUSENT = ['accounts.google.com', 'appleid.apple.com']
-
-function estBranchementDeCompte (url) {
-  const u = analyser(url)
-  if (!u) return false
-  if (HOTES_QUI_REFUSENT.includes(u.host)) return false
-  // Nos propres adresses de démarrage d'autorisation (/api/auth/...).
-  if (estInterne(url)) return true
-  return HOTES_BRANCHEMENT.includes(u.host)
-}
-
 function estPageDeConnexionTiers (url) {
   const u = analyser(url)
   if (!u) return false
@@ -183,6 +140,5 @@ module.exports = {
   ouvrableDehors,
   cheminDepuisProtocole,
   estPageDeConnexionTiers,
-  estBranchementDeCompte,
   estEcranDeConnexion,
 }
