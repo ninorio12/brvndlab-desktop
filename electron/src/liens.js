@@ -82,6 +82,21 @@ const HOTES_BRANCHEMENT = [
 /** Google et Apple refusent une fenêtre sans barre d'adresse : eux sortent. */
 const HOTES_QUI_REFUSENT = ['accounts.google.com', 'appleid.apple.com']
 
+/* QUELLES ADRESSES DOIVENT SORTIR, ET AVEC QUOI LES RELANCER.
+   Seul Google refuse nos fenêtres, et c'est lui qui garde YouTube. On reconnaît
+   donc le départ d'une autorisation YouTube (la nôtre, `/api/auth/youtube/…`,
+   ou celle que Zernio fabrique et qui pointe chez Google) pour la relancer par
+   la page de rebond, qui elle sait rendre la main à l'application.
+   Retourne la question à poser à cette page, ou null si l'adresse n'est pas
+   concernée. */
+function plateformeABrancher (url) {
+  const u = analyser(url)
+  if (!u) return null
+  if (u.host === 'accounts.google.com') return 'p=youtube&z=1'
+  if (estInterne(url) && u.pathname.startsWith('/api/auth/youtube/')) return 'p=youtube'
+  return null
+}
+
 function estBranchementDeCompte (url) {
   const u = analyser(url)
   if (!u) return false
@@ -184,5 +199,6 @@ module.exports = {
   cheminDepuisProtocole,
   estPageDeConnexionTiers,
   estBranchementDeCompte,
+  plateformeABrancher,
   estEcranDeConnexion,
 }

@@ -11,6 +11,7 @@ const {
   cheminDepuisProtocole,
   estPageDeConnexionTiers,
   estBranchementDeCompte,
+  plateformeABrancher,
   estEcranDeConnexion,
 } = require('./liens')
 
@@ -230,6 +231,20 @@ function creerFenetre () {
        et tout se passe comme dans un navigateur. Google reste dehors : il
        refuse les fenêtres sans barre d'adresse, et le retour de focus propose
        alors de recharger. */
+    /* GOOGLE REFUSE NOS FENÊTRES : ON PASSE PAR LE NAVIGATEUR, AVEC RETOUR.
+       Brancher YouTube passe par Google, qui n'accepte pas une fenêtre sans
+       barre d'adresse. On sort donc, mais plus à l'aveugle : la page
+       `/desktop/brancher` s'assure d'une session dans le navigateur, lance
+       l'autorisation, et rend la main à l'application par brvndlab:// une fois
+       le compte branché. Sans elle, l'autorisation réussissait parfois côté
+       serveur mais l'application ne l'apprenait jamais. */
+    const brancherDehors = plateformeABrancher(url)
+    if (brancherDehors) {
+      attenteRetourNavigateur = Date.now()
+      shell.openExternal(siteBase() + '/desktop/brancher?' + brancherDehors)
+      return { action: 'deny' }
+    }
+
     if (estBranchementDeCompte(url)) {
       return {
         action: 'allow',
