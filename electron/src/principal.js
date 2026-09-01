@@ -10,6 +10,7 @@ const {
   ouvrableDehors,
   cheminDepuisProtocole,
   estPageDeConnexionTiers,
+  estBranchementDeCompte,
   estEcranDeConnexion,
 } = require('./liens')
 
@@ -219,9 +220,33 @@ function creerFenetre () {
       partirSeConnecterDehors(url)
       return { action: 'deny' }
     }
-    // Toute autre fenêtre secondaire part dehors : les seules de l'application
-    // sont les branchements de comptes (Nango, YouTube, Instagram), justement
-    // ceux qu'une fenêtre d'application n'a pas le droit d'afficher.
+
+    /* BRANCHER UN COMPTE : LA FENÊTRE RESTE ICI (01/09).
+       Elle partait dehors comme les autres, et l'autorisation tombait dans le
+       vide : la page d'autorisation rend la main à celle qui l'a ouverte, et un
+       onglet de navigateur n'en a pas. L'application n'apprenait donc jamais
+       que YouTube ou Instagram étaient branchés, et aucune donnée ne remontait.
+       Gardée à l'intérieur, la fenêtre retrouve son ouvreuse, se referme seule,
+       et tout se passe comme dans un navigateur. Google reste dehors : il
+       refuse les fenêtres sans barre d'adresse, et le retour de focus propose
+       alors de recharger. */
+    if (estBranchementDeCompte(url)) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowFeatures: {
+          width: 560,
+          height: 720,
+          resizable: true,
+          minimizable: false,
+          fullscreenable: false,
+          // Une page d'autorisation n'a rien à exécuter chez nous : elle
+          // n'obtient ni notre pont, ni l'accès au système de fichiers.
+          webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true },
+        },
+      }
+    }
+
+    // Tout le reste part dehors.
     ouvrirDehors(url)
     return { action: 'deny' }
   })
