@@ -11,7 +11,10 @@ on:
 jobs:
   build:
     name: macOS Universal
-    runs-on: macos-latest
+    # macOS 15 épinglé : sur l image macOS 26 (macos-latest depuis septembre),
+    # le trousseau temporaire d electron-builder refuse son propre mot de passe
+    # (SecKeychainUnlock) et la signature échoue avant même de commencer.
+    runs-on: macos-15
     permissions:
       contents: write
     steps:
