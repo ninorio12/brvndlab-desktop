@@ -1,0 +1,47 @@
+# L'APPLICATION MAC D'AGCI IMMOBILIER.
+#
+# Même chaîne que Brvndlab (dossier electron/) : signature Developer ID et
+# notarisation avec les identifiants Apple posés dans les secrets de ce dépôt.
+# macOS seulement : c'est ce qui est demandé, et Windows non signé serait
+# bloqué par Smart App Control de toute façon.
+
+appId: ch.agci.bureau
+productName: AGCI
+copyright: AGCI Immobilier
+
+directories:
+  output: dist
+  buildResources: ressources
+
+files:
+  - src/**/*
+  - package.json
+
+mac:
+  category: public.app-category.business
+  icon: ressources/icone.png
+  # Un seul fichier pour Apple Silicon et Intel, au nom stable « AGCI.dmg ».
+  artifactName: AGCI.${ext}
+  target:
+    - target: dmg
+      arch:
+        - universal
+    # Le zip est ce que lit la mise à jour automatique sur macOS ; le dmg est
+    # ce qu'on télécharge la première fois.
+    - target: zip
+      arch:
+        - universal
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: ressources/droits.mac.plist
+  entitlementsInherit: ressources/droits.mac.plist
+  notarize: true
+
+dmg:
+  title: AGCI
+
+# La mise à jour automatique lit un catalogue à adresse fixe : la release
+# « agci-latest » de ce dépôt, réécrite à chaque construction.
+publish:
+  provider: generic
+  url: https://github.com/ninorio12/brvndlab-desktop/releases/download/agci-latest

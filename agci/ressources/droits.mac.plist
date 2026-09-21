@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  DROITS DEMANDÉS AU SYSTÈME macOS.
+  Le runtime durci (exigé par la notarisation) interdit par défaut ce dont
+  Chromium a besoin pour fonctionner. Ces quatre lignes sont le minimum d'une
+  application Electron : sans elles, l'application signée se ferme au démarrage.
+  On ne demande RIEN de plus (ni micro, ni caméra, ni fichiers) : chaque droit
+  en trop est une question posée à l'utilisateur et un examen en plus chez Apple.
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+  <key>com.apple.security.network.client</key>
+  <true/>
+</dict>
+</plist>

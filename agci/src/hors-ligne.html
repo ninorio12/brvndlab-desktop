@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>AGCI</title>
+<!-- L'écran hors ligne, le nôtre : une phrase, un bouton. -->
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #ffffff; color: #0a0a0c;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 32px; user-select: none;
+  }
+  @media (prefers-color-scheme: dark) { body { background: #0f1113; color: #f2f3f5; } }
+  .boite { max-width: 380px; }
+  h1 { font-size: 19px; font-weight: 600; letter-spacing: -.02em; margin: 0 0 10px; }
+  p { font-size: 13.5px; line-height: 1.6; opacity: .62; margin: 0 0 28px; }
+  button {
+    font: inherit; font-size: 13.5px; font-weight: 600; color: #fff; background: #383838;
+    border: 0; border-radius: 8px; padding: 10px 20px; cursor: pointer;
+  }
+  button:hover { opacity: .88; }
+  .etat { margin-top: 18px; font-size: 12px; opacity: .45; min-height: 16px; }
+</style>
+</head>
+<body>
+  <div class="boite">
+    <h1>Pas de connexion</h1>
+    <p>AGCI a besoin d’internet pour afficher l’agence. Dès que la connexion revient, on reprend là où vous en étiez.</p>
+    <button id="reessayer" type="button">Réessayer</button>
+    <div class="etat" id="etat"></div>
+  </div>
+<script>
+  var bouton = document.getElementById('reessayer')
+  var etat = document.getElementById('etat')
+  function reessayer () {
+    etat.textContent = 'Nouvelle tentative…'
+    if (window.agci && window.agci.reessayer) window.agci.reessayer()
+  }
+  bouton.addEventListener('click', reessayer)
+  window.addEventListener('online', reessayer)
+  setInterval(function () { if (navigator.onLine) reessayer() }, 15000)
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "name": "agci-bureau",
+  "productName": "AGCI",
+  "version": "1.0.0",
+  "description": "AGCI Immobilier pour macOS",
+  "private": true,
+  "main": "src/principal.js",
+  "author": {
+    "name": "AGCI Immobilier",
+    "email": "gallo@agci.ch"
+  },
+  "scripts": {
+    "start": "electron .",
+    "verifier": "node --check src/principal.js && node --check src/preload.js && node --check src/menu.js && node --check src/liens.js && node --check src/maj.js",
+    "construire": "electron-builder --publish never",
+    "construire:mac": "electron-builder --mac --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  }
+}

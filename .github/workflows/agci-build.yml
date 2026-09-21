@@ -1,0 +1,80 @@
+name: Application Mac AGCI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "agci/**"
+      - ".github/workflows/agci-build.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: macOS Universal
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: agci/package-lock.json
+
+      # Numéro croissant, sinon la mise à jour automatique ne propose jamais rien.
+      - name: Numero de version
+        shell: bash
+        run: |
+          V="1.0.${{ github.run_number }}"
+          node -e "const f='package.json';const p=require('./'+f);p.version='$V';require('fs').writeFileSync(f,JSON.stringify(p,null,2)+'\n')"
+          echo "VERSION=$V" >> $GITHUB_ENV
+          echo "version : $V"
+        working-directory: agci
+
+      - name: Dependances
+        run: npm ci
+        working-directory: agci
+
+      - name: Verification syntaxe
+        run: npm run verifier
+        working-directory: agci
+
+      - name: Construire, signer, notariser
+        run: npx electron-builder --mac --universal --publish never
+        working-directory: agci
+        env:
+          CSC_LINK: ${{ secrets.APPLE_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.APPLE_CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "true"
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+
+      - name: Preuve de signature et de notarisation
+        run: |
+          APP=$(ls -d dist/mac-universal/*.app | head -1)
+          codesign -dv --verbose=2 "$APP" 2>&1 | grep -E "Authority|TeamIdentifier" || true
+          spctl -a -vv -t exec "$APP" 2>&1 || true
+          xcrun stapler validate "$APP" 2>&1 || true
+          ls -la dist
+        working-directory: agci
+
+      # Une release à adresse FIXE (agci-latest) : c'est le lien de
+      # téléchargement et le catalogue de mise à jour. Pas « latest » du dépôt,
+      # qui reste à Brvndlab.
+      - name: Publier
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: agci-latest
+          name: AGCI pour Mac ${{ env.VERSION }}
+          body: "Application Mac d'AGCI Immobilier, signée Developer ID et notarisée. Télécharger AGCI.dmg, glisser dans Applications."
+          draft: false
+          make_latest: false
+          files: |
+            agci/dist/AGCI.dmg
+            agci/dist/AGCI.zip
+            agci/dist/latest-mac.yml
